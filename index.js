@@ -72,6 +72,8 @@ async function send (ctx, path, opts = {}) {
   if (!hidden && isHidden(root, path)) return
 
   // accept encoding处理
+  // 根据请求头Accept-Encoding进行处理，如果用户浏览器支持br或者gzip的压缩方式
+  // 会判断是否存在br或者gz格式文件，如果存在会优先响应br或者gz文件
   let encodingExt = ''
   // serve brotli file when possible otherwise gzipped file when possible
   if (ctx.acceptsEncodings('br', 'identity') === 'br' && brotli && (await fs.exists(path + '.br'))) {
@@ -103,6 +105,7 @@ async function send (ctx, path, opts = {}) {
 
   // stat
   // 404 500 状态处理
+  // 会做文件查找，如果不存在文件，或者文件查找异常，则进行404或者500的响应
   let stats
   try {
     stats = await fs.stat(path)
@@ -131,6 +134,8 @@ async function send (ctx, path, opts = {}) {
 
   // stream
   // 缓存头处理
+  // 设置协商缓存Last-Modified和强制缓存Cache-Control，不过这里面有一个之前没遇到的知识点,设置的Cache-Control会有类似max-age=10000
+  // immutable的值，immutable表示永不改变，浏览器永不需要请求资源，这个感觉可以配合带hash或者版本号的资源使用
   ctx.set('Content-Length', stats.size)
   if (!ctx.response.get('Last-Modified')) ctx.set('Last-Modified', stats.mtime.toUTCString())
   if (!ctx.response.get('Cache-Control')) {
@@ -141,6 +146,9 @@ async function send (ctx, path, opts = {}) {
     ctx.set('Cache-Control', directives.join(','))
   }
   if (!ctx.type) ctx.type = type(path, encodingExt)
+  
+  
+  // 流处理
   ctx.body = fs.createReadStream(path)
 
   return path
