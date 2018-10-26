@@ -34,6 +34,12 @@ module.exports = send
  * @api public
  */
 
+// 1、参数path校验
+// 2、配置opts初始化
+// 3、accept encoding处理
+// 4、404、500处理
+// 5、缓存头处理
+// 6、流响应
 async function send (ctx, path, opts = {}) {
   // 参数校验
   assert(ctx, 'koa context required')
