@@ -35,10 +35,11 @@ module.exports = send
  */
 
 async function send (ctx, path, opts = {}) {
+  // 参数校验
   assert(ctx, 'koa context required')
   assert(path, 'pathname required')
 
-  // options
+  // options 配置
   debug('send "%s" %j', path, opts)
   const root = opts.root ? normalize(resolve(opts.root)) : ''
   const trailingSlash = path[path.length - 1] === '/'
@@ -70,6 +71,7 @@ async function send (ctx, path, opts = {}) {
   // hidden file support, ignore
   if (!hidden && isHidden(root, path)) return
 
+  // accept encoding处理
   let encodingExt = ''
   // serve brotli file when possible otherwise gzipped file when possible
   if (ctx.acceptsEncodings('br', 'identity') === 'br' && brotli && (await fs.exists(path + '.br'))) {
@@ -100,6 +102,7 @@ async function send (ctx, path, opts = {}) {
   }
 
   // stat
+  // 404 500 状态处理
   let stats
   try {
     stats = await fs.stat(path)
@@ -127,6 +130,7 @@ async function send (ctx, path, opts = {}) {
   if (setHeaders) setHeaders(ctx.res, path, stats)
 
   // stream
+  // 缓存头处理
   ctx.set('Content-Length', stats.size)
   if (!ctx.response.get('Last-Modified')) ctx.set('Last-Modified', stats.mtime.toUTCString())
   if (!ctx.response.get('Cache-Control')) {
